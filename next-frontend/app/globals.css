@@ -4,6 +4,8 @@
 
 @source not "../CLAUDE.md";
 @source not "../../CLAUDE.md";
+@source not "../**/*.md";
+@source not "../../**/*.md";
 
 :root {
   /* base */

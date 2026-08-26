@@ -7,12 +7,14 @@ import { MAIL_SUBJECTS, MAIL_TEMPLATES } from './mail.constants';
 @Injectable()
 export class MailService {
   private readonly appUrl: string;
+  private readonly frontendUrl: string;
 
   constructor(
     private readonly mailerService: MailerService,
     @Inject(appConfig.KEY) app: ConfigType<typeof appConfig>,
   ) {
     this.appUrl = app.url;
+    this.frontendUrl = app.frontendUrl;
   }
 
   async sendConfirmationEmail(
@@ -34,7 +36,7 @@ export class MailService {
     name: string,
     token: string,
   ): Promise<void> {
-    const resetUrl = `${this.appUrl}/auth/reset-password?token=${token}`;
+    const resetUrl = `${this.frontendUrl}/reset-password?token=${token}`;
     await this.mailerService.sendMail({
       to: email,
       subject: MAIL_SUBJECTS.PASSWORD_RESET,

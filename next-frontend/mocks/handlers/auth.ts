@@ -13,6 +13,7 @@ const CONFLICT_EMAIL = "conflict@example.com";
 const BAD_REQUEST_EMAIL = "badrequest@example.com";
 const INVALID_CREDENTIALS_EMAIL = "invalid@example.com";
 const UNCONFIRMED_EMAIL = "unconfirmed@example.com";
+const INVALID_RESET_TOKEN = "invalid-reset-token";
 
 function errorEnvelope(
   statusCode: number,
@@ -89,6 +90,18 @@ export const handlers = [
       return HttpResponse.json(
         errorEnvelope(400, "VALIDATION_FAILED", "Validation failed"),
         { status: 400 }
+      );
+    }
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // POST /auth/reset-password
+  http.post(`${env.API_URL}/auth/reset-password`, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    if (body.token === INVALID_RESET_TOKEN) {
+      return HttpResponse.json(
+        errorEnvelope(401, "INVALID_TOKEN", "Invalid or expired reset token"),
+        { status: 401 }
       );
     }
     return new HttpResponse(null, { status: 204 });

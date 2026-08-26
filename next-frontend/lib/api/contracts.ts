@@ -37,6 +37,9 @@ export type LoginDto =
 export type ForgotPasswordDto =
   paths["/auth/forgot-password"]["post"]["requestBody"]["content"]["application/json"];
 
+export type ResetPasswordDto =
+  paths["/auth/reset-password"]["post"]["requestBody"]["content"]["application/json"];
+
 export type RefreshTokenDto =
   paths["/auth/refresh"]["post"]["requestBody"]["content"]["application/json"];
 
