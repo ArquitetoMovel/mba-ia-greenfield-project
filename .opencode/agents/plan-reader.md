@@ -1,6 +1,5 @@
 ---
-description: >-
-  Reads docs/project-plan.md and extracts only the target phase's scope (name, capabilities, out-of-scope, deliverables, affected subprojects) plus one-line summaries of the immediate neighbor phases. Returns a compact structured summary so the main thread never loads the full project-plan.
+description: Reads docs/project-plan.md and extracts only the target phase's scope (name, capabilities, out-of-scope, deliverables, affected subprojects) plus one-line summaries of the immediate neighbor phases. Returns a compact structured summary so the main thread never loads the full project-plan.
 mode: subagent
 permission:
   read: allow
