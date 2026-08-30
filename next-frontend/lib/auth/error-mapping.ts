@@ -83,3 +83,15 @@ export function mapForgotPasswordErrorToForm<T extends FieldValues>(
 
   setError("root.serverError" as Path<T>, { type: "server", message })
 }
+
+/**
+ * Maps reset-password errors onto the form-level alert. A reset token is
+ * opaque and must not be echoed into a field or exposed in an error detail.
+ */
+export function mapResetPasswordErrorToForm<T extends FieldValues>(
+  envelope: ApiErrorEnvelope,
+  setError: UseFormSetError<T>,
+): void {
+  const message = flattenMessage(envelope.message)
+  setError("root.serverError" as Path<T>, { type: "server", message })
+}

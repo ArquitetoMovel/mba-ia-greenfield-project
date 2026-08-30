@@ -1,8 +1,13 @@
+volumes:
+  minio-data:
+  redis-data:
+
 services:
   nestjs-api:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.dev
+    command: npm run start:dev
     ports:
       - 3000:3000
     volumes:
@@ -12,6 +17,40 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_started
+      minio:
+        condition: service_started
+      redis:
+        condition: service_started
+      minio-init:
+        condition: service_completed_successfully
+
+  outbox-relay:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: npm run start:outbox-relay
+    volumes:
+      - .:/home/node/app
+    depends_on:
+      redis:
+        condition: service_started
+      db:
+        condition: service_healthy
+
+  video-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: npm run start:video-worker
+    volumes:
+      - .:/home/node/app
+    depends_on:
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+      minio-init:
+        condition: service_completed_successfully
 
   db:
     image: postgres:17
@@ -33,4 +72,45 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  redis:
+    image: redis:7
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      # Global CORS - open-source MinIO does not support per-bucket CORS;
+      # restrict to configured frontend origins.
+      - MINIO_CORS_ALLOW_ORIGIN=http://localhost:3001
+      - MINIO_CORS_EXPOSE_HEADERS=ETag
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["sh", "/minio-init.sh"]
+    volumes:
+      - ./scripts/minio-init.sh:/minio-init.sh:ro
+    environment:
+      - S3_BUCKET=streamtube-media
+      - FRONTEND_URL=http://localhost:3001

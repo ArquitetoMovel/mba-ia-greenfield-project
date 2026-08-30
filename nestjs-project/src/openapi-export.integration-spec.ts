@@ -128,4 +128,72 @@ describe('exportSpec (integration)', () => {
       }
     }
   });
+
+  it('includes all Phase 03 Video upload and media delivery endpoints', () => {
+    const paths = document.paths as Record<
+      string,
+      Record<string, Record<string, unknown>>
+    >;
+    const expectedEndpoints = [
+      '/videos/uploads',
+      '/videos/uploads/{sessionId}',
+      '/videos/uploads/{sessionId}/part-urls',
+      '/videos/uploads/{sessionId}/complete',
+      '/videos/{publicId}/upload-status',
+      '/videos/{publicId}/playback/master',
+      '/videos/{publicId}/playback/{rendition}',
+      '/videos/{publicId}/thumbnail',
+      '/videos/{publicId}/download',
+    ];
+
+    for (const path of expectedEndpoints) {
+      expect(paths[path]).toBeDefined();
+    }
+  });
+
+  it('protected video endpoints include access-token security requirement', () => {
+    const paths = document.paths as Record<
+      string,
+      Record<string, Record<string, unknown>>
+    >;
+    const protectedPaths = [
+      { path: '/videos/uploads', method: 'post' },
+      { path: '/videos/uploads/{sessionId}', method: 'get' },
+      { path: '/videos/uploads/{sessionId}', method: 'delete' },
+      { path: '/videos/uploads/{sessionId}/part-urls', method: 'post' },
+      { path: '/videos/uploads/{sessionId}/complete', method: 'post' },
+      { path: '/videos/{publicId}/upload-status', method: 'get' },
+      { path: '/videos/{publicId}/playback/master', method: 'get' },
+      { path: '/videos/{publicId}/playback/{rendition}', method: 'get' },
+      { path: '/videos/{publicId}/thumbnail', method: 'get' },
+      { path: '/videos/{publicId}/download', method: 'get' },
+    ];
+
+    for (const { path, method } of protectedPaths) {
+      const operation = paths[path]?.[method];
+      expect(operation).toBeDefined();
+      const security = operation?.security as Array<Record<string, unknown>>;
+      expect(security).toBeDefined();
+      expect(security.some((req) => 'access-token' in req)).toBe(true);
+    }
+  });
+
+  it('all video endpoints have a non-empty summary', () => {
+    const paths = document.paths as Record<
+      string,
+      Record<string, Record<string, unknown>>
+    >;
+    const videoPaths = Object.entries(paths).filter(([p]) =>
+      p.startsWith('/videos'),
+    );
+
+    expect(videoPaths.length).toBeGreaterThan(0);
+
+    for (const [, methods] of videoPaths) {
+      for (const operation of Object.values(methods)) {
+        expect(typeof operation.summary).toBe('string');
+        expect((operation.summary as string).length).toBeGreaterThan(0);
+      }
+    }
+  });
 });

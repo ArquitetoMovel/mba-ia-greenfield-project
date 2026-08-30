@@ -18,7 +18,7 @@ export class ValidationExceptionFilter implements ExceptionFilter {
     const raw = exceptionResponse['message'];
     const message = Array.isArray(raw) ? raw : [raw];
 
-    response.status(400).json({
+    response.status(400).setHeader('Content-Type', 'application/json').json({
       statusCode: 400,
       error: 'VALIDATION_ERROR',
       message,

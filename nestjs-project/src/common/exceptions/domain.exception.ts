@@ -48,3 +48,59 @@ export class TokenReuseDetectedException extends DomainException {
     );
   }
 }
+
+export class UploadFileTooLargeException extends DomainException {
+  constructor() {
+    super('UPLOAD_FILE_TOO_LARGE', 413, 'File exceeds the 10 GB upload limit');
+  }
+}
+
+export class UnsupportedMediaTypeException extends DomainException {
+  constructor() {
+    super('UNSUPPORTED_MEDIA_TYPE', 415, 'Only video media types are accepted');
+  }
+}
+
+export class UploadSessionNotFoundException extends DomainException {
+  constructor() {
+    super('UPLOAD_SESSION_NOT_FOUND', 404, 'Upload session not found');
+  }
+}
+
+export class UploadSessionNotActiveException extends DomainException {
+  constructor() {
+    super(
+      'UPLOAD_SESSION_NOT_ACTIVE',
+      409,
+      'Upload session is no longer active',
+    );
+  }
+}
+
+export class InvalidUploadPartsException extends DomainException {
+  constructor() {
+    super(
+      'INVALID_UPLOAD_PARTS',
+      422,
+      'Upload parts do not match the storage session',
+    );
+  }
+}
+
+export class VideoNotFoundException extends DomainException {
+  constructor() {
+    super('VIDEO_NOT_FOUND', 404, 'Video not found');
+  }
+}
+
+export class VideoAccessDeniedException extends DomainException {
+  constructor() {
+    super('VIDEO_ACCESS_DENIED', 403, 'You do not have access to this video');
+  }
+}
+
+export class VideoNotReadyException extends DomainException {
+  constructor() {
+    super('VIDEO_NOT_READY', 409, 'Video processing is not complete');
+  }
+}

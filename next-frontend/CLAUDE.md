@@ -136,7 +136,13 @@ Source of decisions: `docs/decisions/technical-decisions-next-frontend-openapi-t
 
 The concrete value of `API_URL` depends on Docker Compose topology (e.g., `http://nestjs-api:3000` on a shared Compose network vs `http://host.docker.internal:3000` from a separate stack). The stacks are currently separate — networking integration is deferred to its own infra task; in the meantime, `.env.local` carries whichever value the local environment can reach.
 
-Media streaming will eventually come from Object Storage (S3/MinIO) — TBD.
+#### Media Streaming & Direct-Storage Exception (TD-02)
+
+To avoid proxying massive video payload bytes through Next.js and NestJS, video data transfer follows a strict direct-to-storage model:
+
+- **Browser Direct-Storage Exception (TD-02):** The browser is permitted to communicate directly with Object Storage (MinIO / S3) **only** via pre-signed URLs issued by the backend (for uploading multipart chunks via `PUT` and fetching individual HLS media segments / downloading original files).
+- **Strict BFF Control Plane:** Every control plane operation (initiating upload sessions, fetching part URLs, completing uploads, cancelling uploads, checking processing status, and fetching HLS playlists) **must** go through same-origin BFF Route Handlers (`/api/videos/**`).
+- **Media Test Boundary:** MSW intercepts server-side upstream calls to NestJS API in Vitest and E2E tests. Full multipart S3/CORS browser upload flows and media delivery tests rely on the local Docker Compose runtime rather than browser-level network interception.
 
 Refer to the C4 container diagram at `docs/diagrams/software-arch.mermaid` for the full system view.
 

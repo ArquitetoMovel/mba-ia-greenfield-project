@@ -6,7 +6,7 @@ interface TestDataSourceOptions {
 }
 
 export function createTestDataSource(
-  entities: (Function | string | EntitySchema<any>)[],
+  entities: ((new (...args: any[]) => any) | string | EntitySchema<any>)[],
   options: TestDataSourceOptions = {},
 ): DataSource {
   const { synchronize = true, migrations } = options;
@@ -24,8 +24,11 @@ export function createTestDataSource(
 }
 
 export async function cleanAllTables(dataSource: DataSource): Promise<void> {
-  await dataSource.query('DELETE FROM "refresh_tokens"');
-  await dataSource.query('DELETE FROM "verification_tokens"');
-  await dataSource.query('DELETE FROM "channels"');
-  await dataSource.query('DELETE FROM "users"');
+  await dataSource.query('DELETE FROM "outbox_events"').catch(() => {});
+  await dataSource.query('DELETE FROM "upload_sessions"').catch(() => {});
+  await dataSource.query('DELETE FROM "videos"').catch(() => {});
+  await dataSource.query('DELETE FROM "refresh_tokens"').catch(() => {});
+  await dataSource.query('DELETE FROM "verification_tokens"').catch(() => {});
+  await dataSource.query('DELETE FROM "channels"').catch(() => {});
+  await dataSource.query('DELETE FROM "users"').catch(() => {});
 }

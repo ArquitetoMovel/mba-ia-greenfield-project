@@ -44,6 +44,9 @@ test.describe("auth-login", () => {
       )
       .toBe(true)
 
+    // A successful sign-in replaces the login route with the authenticated home.
+    await expect(page).toHaveURL(/\/$/)
+
     // No invalid-credentials / not-confirmed alert on success.
     await expect(page.locator("[data-slot='form-error']")).toHaveCount(0)
   })

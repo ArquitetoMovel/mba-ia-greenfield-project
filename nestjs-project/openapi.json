@@ -438,6 +438,792 @@
           "auth"
         ]
       }
+    },
+    "/videos/uploads": {
+      "post": {
+        "description": "Creates a video draft, initiates an S3 multipart upload session, and returns upload session metadata.",
+        "operationId": "VideosController_initiateUpload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Upload session created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadSessionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "File exceeds the 10 GB upload limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Only video media types are accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Initiate video upload",
+        "tags": [
+          "videos"
+        ]
+      }
+    },
+    "/videos/uploads/{sessionId}": {
+      "get": {
+        "description": "Returns upload session status, metadata, and confirmed uploaded parts from storage for resumption.",
+        "operationId": "VideosController_getSession",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Upload session details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadSessionDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You do not have access to this video",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Upload session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Get upload session details",
+        "tags": [
+          "videos"
+        ]
+      },
+      "delete": {
+        "description": "Aborts the S3 multipart upload and marks the session and video as cancelled.",
+        "operationId": "VideosController_cancelUpload",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Upload session cancelled successfully"
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You do not have access to this video",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Upload session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Upload session is no longer active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Cancel upload session",
+        "tags": [
+          "videos"
+        ]
+      }
+    },
+    "/videos/uploads/{sessionId}/part-urls": {
+      "post": {
+        "description": "Issues presigned S3 PUT URLs for the requested batch of part numbers.",
+        "operationId": "VideosController_getPartUrls",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPartUrlsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Presigned part URLs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartUrlsResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You do not have access to this video",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Upload session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Upload session is no longer active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Generate presigned part URLs",
+        "tags": [
+          "videos"
+        ]
+      }
+    },
+    "/videos/uploads/{sessionId}/complete": {
+      "post": {
+        "description": "Completes the S3 multipart upload, transitions the video to uploaded, and creates an outbox event.",
+        "operationId": "VideosController_completeUpload",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Multipart upload completed; video is now queued for processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteUploadResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You do not have access to this video",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Upload session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Upload session is no longer active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Upload parts do not match the storage session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Complete multipart upload",
+        "tags": [
+          "videos"
+        ]
+      }
+    },
+    "/videos/{publicId}/upload-status": {
+      "get": {
+        "description": "Returns video processing state, duration, error diagnostics, and playback/thumbnail readiness.",
+        "operationId": "VideosController_getUploadStatus",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Video upload and processing status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoUploadStatusResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You do not have access to this video",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Video not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Get video upload status",
+        "tags": [
+          "videos"
+        ]
+      }
+    },
+    "/videos/{publicId}/playback/master": {
+      "get": {
+        "description": "Returns the HLS master playlist for the video with same-origin variant URLs.",
+        "operationId": "VideosController_getMasterManifest",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HLS master manifest",
+            "content": {
+              "application/vnd.apple.mpegurl": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You do not have access to this video",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Video not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Video is not ready for playback",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Get HLS master playlist",
+        "tags": [
+          "videos"
+        ]
+      }
+    },
+    "/videos/{publicId}/playback/{rendition}": {
+      "get": {
+        "description": "Returns the HLS variant playlist with direct signed segment URLs.",
+        "operationId": "VideosController_getRenditionManifest",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rendition",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HLS variant manifest",
+            "content": {
+              "application/vnd.apple.mpegurl": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You do not have access to this video",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Video or rendition not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Video is not ready for playback",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Get HLS variant playlist",
+        "tags": [
+          "videos"
+        ]
+      }
+    },
+    "/videos/{publicId}/thumbnail": {
+      "get": {
+        "description": "Redirects to a short-lived presigned URL for the video thumbnail.",
+        "operationId": "VideosController_getThumbnail",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to presigned thumbnail URL"
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You do not have access to this video",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Video not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Thumbnail is not ready yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Get thumbnail redirect",
+        "tags": [
+          "videos"
+        ]
+      }
+    },
+    "/videos/{publicId}/download": {
+      "get": {
+        "description": "Redirects to a short-lived presigned URL for downloading the original video file.",
+        "operationId": "VideosController_getDownload",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to presigned original download URL"
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You do not have access to this video",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Video not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Video original is not available yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Get original download redirect",
+        "tags": [
+          "videos"
+        ]
+      }
     }
   },
   "info": {
@@ -480,6 +1266,346 @@
       "ResetPasswordDto": {
         "type": "object",
         "properties": {}
+      },
+      "CreateUploadDto": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "Original filename",
+            "example": "my_video.mp4",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "content_type": {
+            "type": "string",
+            "description": "Declared MIME type (must begin with video/)",
+            "example": "video/mp4",
+            "maxLength": 127
+          },
+          "size_bytes": {
+            "type": "number",
+            "description": "File size in bytes (max 10 GB = 10,737,418,240 bytes)",
+            "example": 52428800,
+            "minimum": 1,
+            "maximum": 10737418240
+          },
+          "file_fingerprint": {
+            "type": "string",
+            "description": "Client file fingerprint for resume matching across network interruptions",
+            "example": "fp_my_video.mp4_52428800_1724900000",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "filename",
+          "content_type",
+          "size_bytes",
+          "file_fingerprint"
+        ]
+      },
+      "UploadSessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "video_id": {
+            "type": "string",
+            "example": "a0000000-0000-0000-0000-000000000001"
+          },
+          "public_id": {
+            "type": "string",
+            "example": "abc123xyz456_demo78901"
+          },
+          "canonical_url": {
+            "type": "string",
+            "example": "/v/abc123xyz456_demo78901"
+          },
+          "upload_session_id": {
+            "type": "string",
+            "example": "b0000000-0000-0000-0000-000000000002"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "completed",
+              "cancelled",
+              "expired"
+            ],
+            "example": "active"
+          },
+          "part_size_bytes": {
+            "type": "number",
+            "example": 16777216
+          },
+          "expires_at": {
+            "type": "string",
+            "example": "2026-09-05T20:00:00.000Z"
+          }
+        },
+        "required": [
+          "video_id",
+          "public_id",
+          "canonical_url",
+          "upload_session_id",
+          "state",
+          "part_size_bytes",
+          "expires_at"
+        ]
+      },
+      "UploadedPartItemDto": {
+        "type": "object",
+        "properties": {
+          "part_number": {
+            "type": "number",
+            "example": 1
+          },
+          "etag": {
+            "type": "string",
+            "example": "d41d8cd98f00b204e9800998ecf8427e"
+          }
+        },
+        "required": [
+          "part_number",
+          "etag"
+        ]
+      },
+      "UploadSessionDetailDto": {
+        "type": "object",
+        "properties": {
+          "video_id": {
+            "type": "string",
+            "example": "a0000000-0000-0000-0000-000000000001"
+          },
+          "public_id": {
+            "type": "string",
+            "example": "abc123xyz456_demo78901"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "completed",
+              "cancelled",
+              "expired"
+            ],
+            "example": "active"
+          },
+          "processing_status": {
+            "type": "string",
+            "enum": [
+              "uploading",
+              "uploaded",
+              "processing",
+              "ready",
+              "failed",
+              "cancelled"
+            ],
+            "example": "uploading"
+          },
+          "part_size_bytes": {
+            "type": "number",
+            "example": 16777216
+          },
+          "expected_size_bytes": {
+            "type": "number",
+            "example": 52428800
+          },
+          "expires_at": {
+            "type": "string",
+            "example": "2026-09-05T20:00:00.000Z"
+          },
+          "uploaded_parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UploadedPartItemDto"
+            }
+          }
+        },
+        "required": [
+          "video_id",
+          "public_id",
+          "state",
+          "processing_status",
+          "part_size_bytes",
+          "expected_size_bytes",
+          "expires_at",
+          "uploaded_parts"
+        ]
+      },
+      "GetPartUrlsDto": {
+        "type": "object",
+        "properties": {
+          "part_numbers": {
+            "description": "Array of 1–100 unique part numbers (each between 1 and 10,000)",
+            "example": [
+              1,
+              2,
+              3
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "part_numbers"
+        ]
+      },
+      "PartUrlItemDto": {
+        "type": "object",
+        "properties": {
+          "part_number": {
+            "type": "number",
+            "example": 1
+          },
+          "url": {
+            "type": "string",
+            "example": "http://localhost:9000/streamtube-media/videos/..."
+          },
+          "expires_at": {
+            "type": "string",
+            "example": "2026-08-29T20:15:00.000Z"
+          }
+        },
+        "required": [
+          "part_number",
+          "url",
+          "expires_at"
+        ]
+      },
+      "PartUrlsResponseDto": {
+        "type": "object",
+        "properties": {
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartUrlItemDto"
+            }
+          }
+        },
+        "required": [
+          "parts"
+        ]
+      },
+      "CompletedPartItemDto": {
+        "type": "object",
+        "properties": {
+          "part_number": {
+            "type": "number",
+            "description": "1-indexed part number",
+            "example": 1,
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "etag": {
+            "type": "string",
+            "description": "ETag returned by S3/MinIO for the uploaded part",
+            "example": "d41d8cd98f00b204e9800998ecf8427e"
+          }
+        },
+        "required": [
+          "part_number",
+          "etag"
+        ]
+      },
+      "CompleteUploadDto": {
+        "type": "object",
+        "properties": {
+          "parts": {
+            "description": "Ordered array of completed parts",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompletedPartItemDto"
+            }
+          }
+        },
+        "required": [
+          "parts"
+        ]
+      },
+      "CompleteUploadResponseDto": {
+        "type": "object",
+        "properties": {
+          "public_id": {
+            "type": "string",
+            "example": "abc123xyz456_demo78901"
+          },
+          "processing_status": {
+            "type": "string",
+            "enum": [
+              "uploading",
+              "uploaded",
+              "processing",
+              "ready",
+              "failed",
+              "cancelled"
+            ],
+            "example": "uploaded"
+          },
+          "processing_version": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "public_id",
+          "processing_status",
+          "processing_version"
+        ]
+      },
+      "VideoUploadStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "public_id": {
+            "type": "string",
+            "example": "abc123xyz456_demo78901"
+          },
+          "canonical_url": {
+            "type": "string",
+            "example": "/v/abc123xyz456_demo78901"
+          },
+          "processing_status": {
+            "type": "string",
+            "enum": [
+              "uploading",
+              "uploaded",
+              "processing",
+              "ready",
+              "failed",
+              "cancelled"
+            ],
+            "example": "ready"
+          },
+          "duration_seconds": {
+            "type": "number",
+            "example": 124.55,
+            "nullable": true
+          },
+          "processing_error": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "thumbnail_available": {
+            "type": "boolean",
+            "example": true
+          },
+          "playback_available": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "public_id",
+          "canonical_url",
+          "processing_status",
+          "duration_seconds",
+          "processing_error",
+          "thumbnail_available",
+          "playback_available"
+        ]
       },
       "ApiErrorEnvelope": {
         "type": "object",

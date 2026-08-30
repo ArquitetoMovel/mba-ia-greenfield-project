@@ -4,16 +4,21 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Post,
   Query,
+  Redirect,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiExcludeEndpoint,
   ApiOperation,
   ApiResponse,
   ApiTags,
   getSchemaPath,
 } from '@nestjs/swagger';
+import type { ConfigType } from '@nestjs/config';
+import appConfig from '../config/app.config';
 import { ApiErrorEnvelope } from '../common/openapi/api-error-envelope.dto';
 import { AuthService } from './auth.service';
 import type { JwtPayload } from './auth.types';
@@ -30,7 +35,10 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    @Inject(appConfig.KEY) private readonly app: ConfigType<typeof appConfig>,
+  ) {}
 
   @Public()
   @Post('register')
@@ -202,6 +210,25 @@ export class AuthController {
   })
   async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<void> {
     return this.authService.forgotPassword(dto.email);
+  }
+
+  @Public()
+  @Get('reset-password')
+  @Redirect()
+  @ApiExcludeEndpoint()
+  legacyResetPasswordLanding(@Query('token') token?: string): {
+    url: string;
+    statusCode: HttpStatus;
+  } {
+    const resetUrl = new URL('/reset-password', this.app.frontendUrl);
+    if (token) {
+      resetUrl.searchParams.set('token', token);
+    }
+
+    return {
+      url: resetUrl.toString(),
+      statusCode: HttpStatus.TEMPORARY_REDIRECT,
+    };
   }
 
   @Public()

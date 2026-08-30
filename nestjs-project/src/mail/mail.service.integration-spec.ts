@@ -82,7 +82,9 @@ describe('MailService (integration)', () => {
 
     expect(detail.HTML).toContain('resettoken');
     expect(detail.HTML).toContain('Bob');
-    expect(detail.HTML).toContain('reset-password');
+    expect(detail.HTML).toContain(
+      `${process.env.FRONTEND_URL ?? 'http://localhost:3001'}/reset-password`,
+    );
     expect(detail.HTML).toContain('1 hour');
   });
 

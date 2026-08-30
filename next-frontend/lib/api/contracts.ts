@@ -37,6 +37,9 @@ export type LoginDto =
 export type ForgotPasswordDto =
   paths["/auth/forgot-password"]["post"]["requestBody"]["content"]["application/json"];
 
+export type ResetPasswordDto =
+  paths["/auth/reset-password"]["post"]["requestBody"]["content"]["application/json"];
+
 export type RefreshTokenDto =
   paths["/auth/refresh"]["post"]["requestBody"]["content"]["application/json"];
 
@@ -52,6 +55,41 @@ export type LoginTokenPair =
 export type RefreshTokenPair =
   paths["/auth/refresh"]["post"]["responses"][200]["content"]["application/json"];
 
-// Shared error envelope (all auth 4xx responses)
+// Shared error envelope (all 4xx responses)
 export type ApiErrorEnvelope =
   paths["/auth/register"]["post"]["responses"][400]["content"]["application/json"];
+
+// ─── Videos & Uploads ─────────────────────────────────────────────────────────
+
+// Request bodies
+export type CreateUploadDto =
+  paths["/videos/uploads"]["post"]["requestBody"]["content"]["application/json"];
+
+export type GetPartUrlsDto =
+  paths["/videos/uploads/{sessionId}/part-urls"]["post"]["requestBody"]["content"]["application/json"];
+
+export type CompleteUploadDto =
+  paths["/videos/uploads/{sessionId}/complete"]["post"]["requestBody"]["content"]["application/json"];
+
+// Upstream success response bodies
+export type UploadSessionResponse =
+  paths["/videos/uploads"]["post"]["responses"][201]["content"]["application/json"];
+
+export type UploadSessionDetail =
+  paths["/videos/uploads/{sessionId}"]["get"]["responses"][200]["content"]["application/json"];
+
+export type PartUrlsResponse =
+  paths["/videos/uploads/{sessionId}/part-urls"]["post"]["responses"][200]["content"]["application/json"];
+
+export type CompleteUploadResponse =
+  paths["/videos/uploads/{sessionId}/complete"]["post"]["responses"][202]["content"]["application/json"];
+
+export type VideoUploadStatusResponse =
+  paths["/videos/{publicId}/upload-status"]["get"]["responses"][200]["content"]["application/json"];
+
+// Playback responses (raw HLS manifests)
+export type HlsMasterManifestResponse =
+  paths["/videos/{publicId}/playback/master"]["get"]["responses"][200]["content"]["application/vnd.apple.mpegurl"];
+
+export type HlsVariantManifestResponse =
+  paths["/videos/{publicId}/playback/{rendition}"]["get"]["responses"][200]["content"]["application/vnd.apple.mpegurl"];

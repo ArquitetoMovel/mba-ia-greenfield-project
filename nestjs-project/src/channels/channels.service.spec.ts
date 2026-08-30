@@ -1,14 +1,16 @@
-import { QueryFailedError } from 'typeorm';
+import { DataSource, EntityManager, QueryFailedError } from 'typeorm';
 import { ChannelsService } from './channels.service';
 import { Channel } from './entities/channel.entity';
 
-function makeManager(overrides: Record<string, jest.Mock> = {}): any {
+function makeManager(
+  overrides: Partial<Record<keyof EntityManager, jest.Mock>> = {},
+): EntityManager {
   return {
     findOne: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
     ...overrides,
-  };
+  } as unknown as EntityManager;
 }
 
 function makeChannel(nickname: string): Channel {
@@ -24,70 +26,83 @@ function makeChannel(nickname: string): Channel {
 }
 
 function makeUniqueError(): QueryFailedError {
-  const err = new QueryFailedError('INSERT', [], new Error()) as any;
-  err.code = '23505';
-  err.detail = 'Key (nickname)=(abc) already exists.';
-  return err;
+  const driverError = Object.assign(new Error('unique_violation'), {
+    code: '23505',
+    detail: 'Key (nickname)=(abc) already exists.',
+  });
+  return new QueryFailedError('INSERT', [], driverError);
 }
 
-function makeDataSource(manager: any): any {
+function makeDataSource(manager: EntityManager): DataSource {
   return {
-    transaction: jest.fn((cb: (manager: any) => Promise<any>) => cb(manager)),
-  };
+    transaction: jest.fn(
+      async (cb: (m: EntityManager) => Promise<unknown>): Promise<unknown> =>
+        cb(manager),
+    ),
+  } as unknown as DataSource;
 }
 
 describe('ChannelsService', () => {
   describe('createChannel', () => {
     it('derives nickname from email prefix and saves when no collision', async () => {
       const channel = makeChannel('test');
+      const findOneSpy = jest.fn().mockResolvedValue(null);
+      const createSpy = jest.fn().mockReturnValue(channel);
+      const saveSpy = jest.fn().mockResolvedValue(channel);
       const manager = makeManager({
-        findOne: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockReturnValue(channel),
-        save: jest.fn().mockResolvedValue(channel),
+        findOne: findOneSpy,
+        create: createSpy,
+        save: saveSpy,
       });
       const service = new ChannelsService(makeDataSource(manager));
 
       const result = await service.createChannel('user-id', 'test@example.com');
 
-      expect(manager.findOne).toHaveBeenCalledWith(Channel, {
+      expect(findOneSpy).toHaveBeenCalledWith(Channel, {
         where: { nickname: 'test' },
       });
-      expect(manager.save).toHaveBeenCalledTimes(1);
+      expect(saveSpy).toHaveBeenCalledTimes(1);
       expect(result.nickname).toBe('test');
     });
 
     it('retries with suffix when pre-check finds existing nickname', async () => {
       const colliding = makeChannel('john');
       const resolved = makeChannel('john_abc');
+      const findOneSpy = jest
+        .fn()
+        .mockResolvedValueOnce(colliding)
+        .mockResolvedValueOnce(null);
+      const createSpy = jest.fn().mockReturnValue(resolved);
+      const saveSpy = jest.fn().mockResolvedValue(resolved);
       const manager = makeManager({
-        findOne: jest
-          .fn()
-          .mockResolvedValueOnce(colliding)
-          .mockResolvedValueOnce(null),
-        create: jest.fn().mockReturnValue(resolved),
-        save: jest.fn().mockResolvedValue(resolved),
+        findOne: findOneSpy,
+        create: createSpy,
+        save: saveSpy,
       });
       const service = new ChannelsService(makeDataSource(manager));
 
       const result = await service.createChannel('user-id', 'john@example.com');
 
-      expect(manager.findOne).toHaveBeenCalledTimes(2);
-      expect(manager.save).toHaveBeenCalledTimes(1);
+      expect(findOneSpy).toHaveBeenCalledTimes(2);
+      expect(saveSpy).toHaveBeenCalledTimes(1);
       expect(result.nickname).toMatch(/^john_[a-z0-9]{3}$/);
     });
 
     it('retries with suffix on concurrent unique constraint violation', async () => {
       const resolved = makeChannel('alice_abc');
+      const findOneSpy = jest
+        .fn()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      const createSpy = jest.fn().mockReturnValue(resolved);
+      const saveSpy = jest
+        .fn()
+        .mockRejectedValueOnce(makeUniqueError())
+        .mockResolvedValueOnce(resolved);
       const manager = makeManager({
-        findOne: jest
-          .fn()
-          .mockResolvedValueOnce(null)
-          .mockResolvedValueOnce(null),
-        create: jest.fn().mockReturnValue(resolved),
-        save: jest
-          .fn()
-          .mockRejectedValueOnce(makeUniqueError())
-          .mockResolvedValueOnce(resolved),
+        findOne: findOneSpy,
+        create: createSpy,
+        save: saveSpy,
       });
       const service = new ChannelsService(makeDataSource(manager));
 
@@ -96,7 +111,7 @@ describe('ChannelsService', () => {
         'alice@example.com',
       );
 
-      expect(manager.save).toHaveBeenCalledTimes(2);
+      expect(saveSpy).toHaveBeenCalledTimes(2);
       expect(result.nickname).toMatch(/^alice/);
     });
 
@@ -119,17 +134,18 @@ describe('ChannelsService', () => {
     it('re-throws non-unique-constraint errors immediately', async () => {
       const unexpectedError = new Error('Connection lost');
       const channel = makeChannel('carol');
+      const saveSpy = jest.fn().mockRejectedValue(unexpectedError);
       const manager = makeManager({
         findOne: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockReturnValue(channel),
-        save: jest.fn().mockRejectedValue(unexpectedError),
+        save: saveSpy,
       });
       const service = new ChannelsService(makeDataSource(manager));
 
       await expect(
         service.createChannel('user-id', 'carol@example.com'),
       ).rejects.toThrow('Connection lost');
-      expect(manager.save).toHaveBeenCalledTimes(1);
+      expect(saveSpy).toHaveBeenCalledTimes(1);
     });
   });
 });
