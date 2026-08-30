@@ -18,7 +18,11 @@ describe('DomainExceptionFilter', () => {
   beforeEach(() => {
     filter = new DomainExceptionFilter();
     mockJson = jest.fn();
-    mockStatus = jest.fn().mockReturnValue({ json: mockJson });
+    const mockSetHeader = jest.fn().mockReturnValue({ json: mockJson });
+    mockStatus = jest.fn().mockReturnValue({
+      setHeader: mockSetHeader,
+      json: mockJson,
+    });
 
     mockHost = {
       switchToHttp: () => ({
